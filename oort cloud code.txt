@@ -1,0 +1,183 @@
+#we are assuming a uniform spherical shell shaped oort cloud to get idealised computations so theta and phi(the azimuths) 
+
+import random
+import math
+
+EarthMass = 5.9723e24 #units: kg
+JupiterMass = 1.8987e27 #units: kg
+SunMass = 1.98844e30 #units: kg
+GalaxyMass = 1.3e11 * SunMass; #units: kg
+AU = 149597870660.0 #AU = Astronomical Unit
+PC = 3.0856775807e16 # units: m / pc
+G = 6.6742e-11  #grav const in AU^3 / (kg s^2)
+Pi = 3.141592654
+year = 60.0 * 60.0 * 24.0 * 365.0 #one year in seconds
+
+#only have to cross check units once
+    
+class comet():
+    def __init__(self,rin,rout):
+          self.rad_dist=random.uniform(rin,rout)                      #polar coordinate representations of the comet's position        
+          self.x_azimuth=random.uniform(0,2*Pi)                     #angles in radians  
+          self.z_azimuth=random.uniform(0,Pi)  
+
+          self.x=self.rad_dist*math.sin(self.z_azimuth)*math.cos(self.x_azimuth)
+          self.y=self.rad_dist*math.sin(self.z_azimuth)*math.sin(self.x_azimuth)
+          self.z=self.rad_dist*math.cos(self.z_azimuth)    
+
+          self.max_velocity=math.sqrt((G*SunMass)/(self.rad_dist*AU))  
+
+          self.slack=random.randint(1,3)
+
+          if self.slack==1:
+              self.y_v=random.uniform(0,1)
+              self.z_v=random.uniform(0,1)  
+              self.x_v= -(self.y*self.y_v+self.z*self.z_v)/self.x
+              self.v=math.sqrt(self.x_v*self.x_v+self.y_v*self.y_v+self.z_v*self.z_v)  
+              self.x_v=self.x_v/self.v  
+              self.y_v=self.y_v/self.v
+              self.z_v=self.z_v/self.v
+              self.x_v=self.x_v*self.max_velocity  
+              self.y_v=self.y_v*self.max_velocity
+              self.z_v=self.z_v*self.max_velocity
+              
+          elif self.slack==2:
+              self.x_v=random.uniform(0,1)  
+              self.z_v=random.uniform(0,1)  
+              self.y_v= -(self.x*self.x_v+self.z*self.z_v)/self.y
+              self.v=math.sqrt(self.x_v*self.x_v+self.y_v*self.y_v+self.z_v*self.z_v)
+              self.x_v=self.x_v/self.v  
+              self.y_v=self.y_v/self.v
+              self.z_v=self.z_v/self.v
+              self.x_v=self.x_v*self.max_velocity  
+              self.y_v=self.y_v*self.max_velocity
+              self.z_v=self.z_v*self.max_velocity
+                
+          else:
+              self.x_v=random.uniform(0,1)
+              self.y_v=random.uniform(0,1)  
+              self.z_v = - (self.x*self.x_v+self.y*self.y_v)/self.z
+              self.v = math.sqrt(self.x_v*self.x_v+self.y_v*self.y_v+self.z_v*self.z_v)
+              self.x_v=self.x_v/self.v  
+              self.y_v=self.y_v/self.v
+              self.z_v=self.z_v/self.v
+              self.x_v = self.x_v*self.max_velocity  
+              self.y_v = self.y_v*self.max_velocity
+              self.z_v = self.z_v*self.max_velocity                
+            
+          self.Earth_rad_dist=1*AU                       #initialisation of the Earth and Jupiter screeners
+          self.Jupiter_rad_dist=5.46*AU
+          self.Earth_x_azimth=random.uniform(0,2*Pi)
+          self.Earth_z_azimtuh=Pi/2
+          self.Jupiter_x_azimth=random.uniform(0,2*Pi)
+          self.Jupiter_z_azimtuh=Pi/2  
+
+    def orbits(self,time):                               #definitions of the orbits of earth,jupiter, the oort cloud's prbital period is too high for the simluation so we neglect it here although it will lead to significant errors 
+        self.omega_Earth= math.sqrt(G*EarthMass/pow(self.Earth_rad_dist,3))                                                                            #angular velocity
+        self.Earth_x_azimtuh= self.omega_Earth*time                                                   #time over which it interacts  
+        self.omega_Jupiter= math.sqrt(G*JupiterMass/pow(self.Earth_rad_dist,3))                                                                        #angular velocity
+        self.Jupiter_x_azimtuh= self.omega_Jupiter*time                                               #time over which it interacts  
+
+        self.Jupiter_x=self.Jupiter_rad_dist*math.sin(self.Jupiter_z_azimuth)*math.cos(self.Jupiter_x_azimuth)
+        self.Jupiter_y=self.Jupiter_rad_dist*math.sin(self.Jupiter_z_azimuth)*math.sin(self.Jupiter_x_azimuth)
+        self.Jupiter_z=self.Jupiter_rad_dist*math.cos(self.Jupiter_z_azimuth)    
+
+        self.Earth_x=self.Earth_rad_dist*math.sin(self.Earth_z_azimuth)*math.cos(self.Earth_x_azimuth)
+        self.Earth_y=self.Earth_rad_dist*math.sin(self.Earth_z_azimuth)*math.sin(self.Earth_x_azimuth)
+        self.Earth_z=self.Earth_rad_dist*math.cos(self.Earth_z_azimuth)    
+
+    def forces(self):                               #i have to do this calc later
+        self.SunForce=(G*SunMass)/(pow((self.rad_dist),2))                                 #force of the sun
+        self.SunForce_x=-self.SunForce*math.sin(self.z_azimuth)*math.cos(self.x_azimuth)   #exaclty in reverse of r direction
+        self.SunForce_y=-self.SunForce*math.sin(self.z_azimuth)*math.sin(self.x_azimuth)   #these calculations are force per unit mass
+        self.SunForce_z=-self.SunForce*math.cos(self.z_azimuth)
+
+        #EarthForce
+        self.EarthForce_x=self.Earth_x-self.x                                              #as of now only force direction calclulations
+        self.EarthForce_y=self.Earth_y-self.y    
+        self.EarthForce_z=self.Earth_z-self.z    
+        self.rms_Earth=math.sqrt(self.EarthForce_x*self.EarthForce_x + self.EarthForce_y*self.EarthForce_y + self.EarthForce_z*self.EarthForce_z)
+        self.EarthForce=(G*EarthMass)/(pow((self.rms_Earth),2))
+        self.EarthForce_x=-self.EarthForce*math.sin(self.Earth_z_azimuth)*math.cos(self.Earth_x_azimuth)   #exaclty in reverse of r direction
+        self.EarthForce_y=-self.EarthForce*math.sin(self.Earth_z_azimuth)*math.sin(self.Earth_x_azimuth)   #these calculations are force per unit mass
+        self.EarthForce_z=-self.EarthForce*math.cos(self.Earth_z_azimuth)
+
+        #JupiterForce
+        self.JupiterForce_x=self.Jupiter_x-self.x                                              #as of now only force direction calclulations
+        self.JupiterForce_y=self.Jupiter_y-self.y    
+        self.JupiterForce_z=self.Jupiter_z-self.z    
+        self.rms_Jupiter=math.sqrt(self.JupiterForce_x*self.JupiterForce_x + self.JupiterForce_y*self.JupiterForce_y + self.JupiterForce_z*self.JupiterForce_z)
+        self.JupiterForce=(G*JupiterMass)/(pow((self.rms_Jupiter),2))
+        self.JupiterForce_x=-self.JupiterForce*math.sin(self.Jupiter_z_azimuth)*math.cos(self.Jupiter_x_azimuth)   #exaclty in reverse of r direction
+        self.JupiterForce_y=-self.JupiterForce*math.sin(self.Jupiter_z_azimuth)*math.sin(self.Jupiter_x_azimuth)   #these calculations are force per unit mass
+        self.JupiterForce_z=-self.JupiterForce*math.cos(self.Jupiter_z_azimuth)
+
+        #other forces can be similarly implemented but we defer it for now        
+        
+class floatingmass:
+    def __init__(self,mass,r,v):
+        self.mass=mass
+        self.rad_dist=r
+        self.v=v
+        self.x_azimuth=random.uniform(0,2*Pi)                     #angles in radians  
+        self.z_azimuth=random.uniform(0,Pi)  
+        self.x=self.rad_dist*math.sin(self.z_azimuth)*math.cos(self.x_azimuth)
+        self.y=self.rad_dist*math.sin(self.z_azimuth)*math.sin(self.x_azimuth)
+        self.z=self.rad_dist*math.cos(self.z_azimuth)
+
+        if self.x_azimuth<2*Pi and self.x_azimuth>Pi:
+            self.y_v=-1                                           #deciding direction
+        else:
+            self.y_v=1
+        if self.z_azimuth<Pi/2 and self.z_azimuth>0:
+            self.z_v=-1
+        else:
+            self.z_v=1
+        if self.x_azimuth>Pi/2 and self.x_azimuth<3*Pi/2:
+            self.x_v=1
+        else:    
+            self.x_v=-1                                           #directions settled by this point
+
+        self.v_sq=self.v*self.v
+        self.v_x_sq=random.uniform(0,self.v_sq)
+        self.v_y_sq=random.uniform(0,self.v_sq - self.v_x_sq)
+        self.v_z_sq=random.uniform(0,self.v_sq - self.v_x_sq - self.v_y_sq)
+        self.x_v=self.x_v * math.sqrt(self.v_x_sq)                #final initialisation of velocities,we can unbias this using similar slack procedure as previously used 
+        self.y_v=self.y_v * math.sqrt(self.v_y_sq)
+        self.z_v=self.z_v * math.sqrt(self.v_z_sq)
+        
+def main():
+    countreached=0                                                #count of comets reaching earth's orbit        
+    print "Hello and welcome to the oort cloud simulator"
+    no_of_comets=input("Enter number of comets you want to process in this simulation:")
+    rin=input("Enter the inner radius of the oort cloud in AU:")
+    rout=input("Enter the outer radius of the oort cloud in AU:")
+    comets=[]                                                        
+
+    for i in range(no_of_comets):
+        temp=comet(rin,rout)        
+        comets.append(temp)       
+    no_of_masses=input("Enter number of floating masses to begin simulation with:")
+    masses=[]
+
+    for i in range(no_of_masses):
+        r=random.uniform(rout,3*rout)
+        v=random.uniform(1000,250000)                 #we will change these parameters later
+        m=random.uniform(0.000001*SunMass,SunMass)    
+        newmass=floatingmass(m,r,v)                   #random initialisation of newmass
+        masses.append(newmass)
+
+    bin_values=[]
+
+    time=input("Enter time over which you wish to run this simulation:")
+    bin_time=input("Enter interval of time over which you wish to calculate the simulator's results:")       #the higher the bin time the more faster the calclutation but less accurate the result      
+    tr_ratio=time/bin_time
+    it=0
+
+    for i in range(tr_ratio):                        #we will use this list for the computation purposes
+        bin_values.append(it)
+        it=it+bin_time  
+
+    
+
+main()               #the final function call    
